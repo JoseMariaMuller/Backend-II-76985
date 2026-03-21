@@ -1,28 +1,33 @@
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+dotenv.config();
 
-export const generateToken = (user) => {
-    const token = jwt.sign(
-        { 
-            _id: user._id, 
-            email: user.email, 
-            role: user.role 
-        }, 
-        process.env.JWT_SECRET, 
-        { expiresIn: '24h' }
-    );
-    return token;
+/**
+ * @param {Object} payload 
+ * @param {Object} options 
+ * @returns {string} 
+ */
+export const generateToken = (payload, options = {}) => {
+    const defaultOptions = {
+        expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+    };
+    
+    return jwt.sign(payload, process.env.JWT_SECRET, { ...defaultOptions, ...options });
 };
 
-export const authToken = (req, res, next) => {
-    const authHeader = req.headers.authorization;
+/**
+ * @param {string} token 
+ * @returns {Object}
+ * @throws {Error} 
+ */
+export const verifyToken = (token) => {
+    return jwt.verify(token, process.env.JWT_SECRET);
+};
 
-    if (!authHeader) return res.status(401).send({ error: 'No autenticado' });
-
-    const token = authHeader.split(' ')[1]; 
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, credentials) => {
-        if (err) return res.status(403).send({ error: 'No autorizado' });
-        req.user = credentials.user || credentials; 
-        next();
-    });
+/**
+ * @param {string} token 
+ * @returns {Object}
+ */
+export const decodeToken = (token) => {
+    return jwt.decode(token);
 };
